@@ -1,0 +1,91 @@
+{
+  "engine": "edge",
+  "voice": "zh-CN-YunxiNeural",
+  "rate": "+6%",
+  "scenes": [
+    {
+      "id": "intro",
+      "kicker": "TASK NOTICE · 开场",
+      "title": "跑完了，别让答案等你",
+      "qualifier": "dsh-task-notice · 每个会话的完成提醒",
+      "text": "任务跑完了，人还在等；切回来才发现，答案早就好了。dsh-task-notice 把完成提醒放到整个窗口。",
+      "caption": "任务跑完了，人还在等\n把完成提醒放到整个窗口",
+      "facts": [
+        ["version", "0.1.0"],
+        ["license", "MIT"]
+      ]
+    },
+    {
+      "id": "global",
+      "kicker": "GLOBAL · 所有会话",
+      "title": "不只盯着眼前这个会话",
+      "qualifier": "Host 订阅所有 Session 的 turn 结束事件",
+      "text": "它不只盯着眼前这个会话。主进程订阅所有会话，后台项目跑完，右上角的铃铛也会亮。",
+      "caption": "后台项目跑完\n右上角的铃铛也会亮",
+      "facts": [
+        ["scope", "all sessions"],
+        ["feed", "long-poll"]
+      ]
+    },
+    {
+      "id": "card",
+      "kicker": "CARD · 完成卡片",
+      "title": "哪个项目、问了什么，一眼看清",
+      "qualifier": "完成、失败、停止、阻塞分开说",
+      "text": "卡片写清项目、会话、你的问题和用时。完成、失败、停止、阻塞分开说，点一下回到会话。",
+      "caption": "项目、会话、问题、用时\n点一下回到那个会话",
+      "facts": [
+        ["status", "4 kinds"],
+        ["click", "back to session"]
+      ]
+    },
+    {
+      "id": "ledger",
+      "kicker": "LEDGER · 完成台账",
+      "title": "按天排好，未读留着",
+      "qualifier": "打开台账即已读；点开过的条目自动收起",
+      "text": "点开铃铛是完成台账，按天排好，未读高亮。顶部显示正在跑的任务，看过的自动收起。",
+      "caption": "按天排好，未读高亮\n看过的自动收起",
+      "facts": [
+        ["history", "100"],
+        ["running", "live"]
+      ]
+    },
+    {
+      "id": "drag",
+      "kicker": "DRAG · 拖到顺手",
+      "title": "拖一下，位置就记住",
+      "qualifier": "铃铛、面板标题、完成卡片都能拖；靠近边缘自动翻面",
+      "text": "位置也能拖。按住铃铛、标题或卡片，拖到顺手的地方；靠近边缘自动翻面，松手就记住。",
+      "caption": "按住铃铛或卡片拖动\n松手记住，设置里复位",
+      "facts": [
+        ["position", "localStorage"],
+        ["reset", "in settings"]
+      ]
+    },
+    {
+      "id": "sound",
+      "kicker": "SOUND · 提醒",
+      "title": "两声短铃，也可以安静",
+      "qualifier": "完成和失败不同音色；系统通知可选",
+      "text": "两声短铃，完成和失败不一样；窗口在后台还能走系统通知，不需要就关掉。",
+      "caption": "完成和失败，两种短铃\n系统通知和音量都有开关",
+      "facts": [
+        ["chime", "synthesised"],
+        ["system", "opt-in"]
+      ]
+    },
+    {
+      "id": "install",
+      "kicker": "INSTALL · 安装",
+      "title": "一行命令，装进 dsh",
+      "qualifier": "npm 搜 dsh-task-notice · 记录只留在本机",
+      "text": "安装一行命令：dsh plugin add dsh-task-notice。也可以在插件对话框里粘贴包名，npm 搜得到，免费开源，记录只留在本机。",
+      "caption": "dsh plugin add dsh-task-notice\n免费开源，记录只留在本机",
+      "facts": [
+        ["package", "dsh-task-notice"],
+        ["license", "MIT"]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,669 @@
+/**
+ * Styles for the dsh-task-notice promo film.
+ *
+ * A document, not a poster: kicker top-left, fact corner top-right, title block,
+ * one content layer, a hairline, and the spoken line centred at the bottom.
+ * The stage is exactly 1920x1080 and clips; every animated property is written
+ * inline by film.js, so no transition or keyframe lives here.
+ */
+
+:root {
+  --paper: #f7f8fa;
+  --card: #ffffff;
+  --ink: #16181d;
+  --ink-2: #5b6068;
+  --ink-3: #8b9098;
+  --rule: rgba(22, 24, 29, 0.09);
+  --rule-strong: rgba(22, 24, 29, 0.16);
+  --blue: #4d6bfe;
+  --blue-deep: #344cc9;
+  --green: #2f9e62;
+  --red: #d64b4b;
+  --amber: #c78926;
+  --night: #16181d;
+
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', Consolas, Menlo, 'PingFang SC', monospace;
+
+  --pad: 104px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #000;
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+
+.stage {
+  position: relative;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.stage::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(900px 520px at 84% 8%, rgba(77, 107, 254, 0.055), transparent 70%),
+    radial-gradient(700px 460px at 12% 104%, rgba(47, 158, 98, 0.035), transparent 70%);
+}
+
+.stage[data-theme='night'] {
+  background: var(--night);
+  color: #f2f4f8;
+}
+
+.stage[data-theme='night']::before {
+  background: radial-gradient(1100px 700px at 80% 12%, rgba(77, 107, 254, 0.13), transparent 72%);
+}
+
+/* ---------- Chrome ---------- */
+
+.kicker {
+  position: absolute;
+  left: var(--pad);
+  top: 74px;
+  font-family: var(--mono);
+  font-size: 21px;
+  letter-spacing: 1.6px;
+  color: var(--ink-3);
+  text-transform: uppercase;
+}
+
+.stage[data-theme='night'] .kicker {
+  color: rgba(242, 244, 248, 0.5);
+}
+
+.facts {
+  position: absolute;
+  right: var(--pad);
+  top: 74px;
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 6px 20px;
+  justify-content: end;
+  font-family: var(--mono);
+  font-size: 21px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+
+.facts dt {
+  color: var(--ink-3);
+  text-align: right;
+}
+
+.facts dd {
+  margin: 0;
+  color: var(--ink);
+  text-align: left;
+}
+
+.stage[data-theme='night'] .facts dt {
+  color: rgba(242, 244, 248, 0.45);
+}
+
+.stage[data-theme='night'] .facts dd {
+  color: #f2f4f8;
+}
+
+.title {
+  position: absolute;
+  left: var(--pad);
+  top: 190px;
+  margin: 0;
+  font-size: 76px;
+  font-weight: 650;
+  letter-spacing: -1.4px;
+  line-height: 1.1;
+}
+
+.qualifier {
+  position: absolute;
+  left: var(--pad);
+  top: 300px;
+  margin: 0;
+  max-width: 1450px;
+  font-size: 30px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.stage[data-theme='night'] .qualifier {
+  color: rgba(242, 244, 248, 0.66);
+}
+
+.rule {
+  position: absolute;
+  left: var(--pad);
+  right: var(--pad);
+  top: 918px;
+  height: 1px;
+  background: var(--rule);
+}
+
+.stage[data-theme='night'] .rule {
+  background: rgba(242, 244, 248, 0.16);
+}
+
+.subs {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 944px;
+  display: flex;
+  justify-content: center;
+  opacity: 0;
+}
+
+.subs .line {
+  max-width: 1500px;
+  font-size: 33px;
+  line-height: 1.5;
+  text-align: center;
+  white-space: pre-line;
+  color: var(--ink);
+}
+
+.stage[data-theme='night'] .subs .line {
+  color: #eef1f6;
+}
+
+.progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 0;
+  background: var(--blue);
+}
+
+/* ---------- Content layers ---------- */
+
+.layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+.notes {
+  position: absolute;
+  left: 580px;
+  top: 438px;
+  width: 1160px;
+}
+
+.notes p {
+  margin: 0 0 20px;
+  font-size: 30px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.notes .noteLead {
+  margin-bottom: 24px;
+  font-size: 35px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* ---------- The workspace shot ---------- */
+
+.workspace {
+  position: absolute;
+  left: var(--pad);
+  top: 424px;
+  width: 1712px;
+  height: 456px;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--rule-strong);
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: 0 28px 70px rgba(16, 24, 40, 0.13);
+}
+
+.workspace img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* The dock sits at a known spot in the synthetic 1600x1000 workspace: the
+ * ring and tag are positioned in the same coordinate system as the shot. */
+.intro-ring {
+  position: absolute;
+  left: 1751px;
+  top: 479px;
+  width: 50px;
+  height: 50px;
+  border: 2px solid var(--blue);
+  border-radius: 50%;
+  box-shadow: 0 0 0 8px rgba(77, 107, 254, 0.1);
+}
+
+.intro-tag {
+  position: absolute;
+  right: 124px;
+  top: 555px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 13px;
+  border: 1px solid rgba(77, 107, 254, 0.2);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--blue-deep);
+  font-family: var(--mono);
+  font-size: 16px;
+  box-shadow: 0 8px 22px rgba(76, 104, 240, 0.12);
+}
+
+.tagDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--blue);
+}
+
+/* ---------- Real panel and card stills ---------- */
+
+.shot {
+  position: absolute;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: 0 24px 60px rgba(16, 24, 40, 0.13);
+}
+
+.shot img {
+  display: block;
+  width: 100%;
+}
+
+.panel-shot {
+  left: var(--pad);
+  top: 390px;
+  width: 370px;
+  height: 521px;
+}
+
+.panel-shot img {
+  width: 100%;
+}
+
+.ledger-shot {
+  left: 1446px;
+  top: 390px;
+  width: 370px;
+  height: 521px;
+}
+
+.cards-shot {
+  position: absolute;
+  left: var(--pad);
+  top: 438px;
+  width: 640px;
+  margin: 0;
+}
+
+.cards-shot img {
+  display: block;
+  width: 100%;
+}
+
+/* ---------- Scene 2: the rail of projects ---------- */
+
+.sessionRail {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 32px;
+}
+
+.sessionRail span {
+  padding: 7px 12px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 8px;
+  font-family: var(--mono);
+  font-size: 15px;
+  color: var(--ink-3);
+}
+
+.sessionRail .railBell {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: var(--blue);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 650;
+  box-shadow: 0 8px 20px rgba(77, 107, 254, 0.22);
+}
+
+/* ---------- Scene 3: status legend ---------- */
+
+.statusGrid {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 34px;
+}
+
+.statusGrid span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 18px;
+  color: var(--ink-2);
+}
+
+.statusGrid i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+}
+
+.statusGrid span[data-tone='failed'] i { background: var(--red); }
+.statusGrid span[data-tone='stopped'] i { background: var(--amber); }
+.statusGrid span[data-tone='blocked'] i { background: var(--ink-3); }
+
+#card-notes {
+  left: 820px;
+  top: 448px;
+  width: 996px;
+}
+
+/* ---------- Scene 4: ledger ---------- */
+
+#ledger-notes {
+  left: var(--pad);
+  top: 448px;
+  width: 1120px;
+}
+
+.ledger-stamp {
+  position: absolute;
+  left: 1238px;
+  top: 492px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 112px;
+  padding: 16px 0 13px;
+  border-top: 2px solid var(--blue);
+  border-bottom: 1px solid var(--rule);
+  color: var(--blue);
+}
+
+.ledger-stamp b {
+  font-size: 56px;
+  font-weight: 650;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.ledger-stamp span {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 1.4px;
+  color: var(--ink-3);
+}
+
+/* ---------- Scene 5: drag ---------- */
+
+.drag-shot {
+  width: 760px;
+  height: 456px;
+}
+
+.drag-ghost {
+  position: absolute;
+  left: 831px;
+  top: 445px;
+  width: 30px;
+  height: 30px;
+  border: 1.5px dashed rgba(77, 107, 254, 0.65);
+  border-radius: 10px;
+}
+
+.drag-ghost::before {
+  content: '默认位置';
+  position: absolute;
+  left: -8px;
+  top: -29px;
+  color: var(--ink-3);
+  font-family: var(--mono);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.drag-target {
+  position: absolute;
+  left: 170px;
+  top: 796px;
+  color: var(--blue-deep);
+  font-family: var(--mono);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.drag-target::before {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: var(--blue);
+  vertical-align: 2px;
+}
+
+.drag-path {
+  position: absolute;
+  inset: 0;
+  width: 1920px;
+  height: 1080px;
+  pointer-events: none;
+}
+
+.drag-path path {
+  fill: none;
+  stroke: rgba(77, 107, 254, 0.55);
+  stroke-width: 2;
+  stroke-dasharray: 7 8;
+}
+
+.drag-path .arrow {
+  stroke: var(--blue);
+  stroke-width: 2.5;
+  stroke-dasharray: none;
+}
+
+#drag-notes {
+  left: 924px;
+  top: 442px;
+  width: 900px;
+}
+
+/* ---------- Scene 6: sound ---------- */
+
+.sound-shot {
+  left: var(--pad);
+  top: 424px;
+  width: 536px;
+  height: 450px;
+}
+
+#sound-notes {
+  left: 720px;
+  top: 448px;
+  width: 1090px;
+}
+
+.chime {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin-bottom: 28px;
+}
+
+.chime span {
+  position: absolute;
+  inset: 0;
+  border: 1.5px solid rgba(77, 107, 254, 0.4);
+  border-radius: 50%;
+}
+
+.chime span:nth-child(2) { inset: 12px; }
+.chime span:nth-child(3) { inset: 24px; background: rgba(77, 107, 254, 0.08); }
+
+/* ---------- Scene 7: install ---------- */
+
+.code {
+  position: absolute;
+  left: var(--pad);
+  top: 424px;
+  width: 1040px;
+  min-height: 212px;
+  padding: 38px 44px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.045);
+  color: #eaeef5;
+  font-family: var(--mono);
+  font-size: 32px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.prompt {
+  margin-right: 15px;
+  color: #6ee7a8;
+}
+
+.caret {
+  display: inline-block;
+  width: 11px;
+  height: 31px;
+  margin-left: 5px;
+  vertical-align: -5px;
+  background: #9dc1ff;
+}
+
+.install-hints {
+  position: absolute;
+  left: var(--pad);
+  top: 678px;
+  width: 1040px;
+}
+
+.install-hints p {
+  margin: 0 0 16px;
+  font-size: 26px;
+  line-height: 1.5;
+  color: rgba(242, 244, 248, 0.62);
+}
+
+.install-hints .k {
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #eaeef5;
+  font-family: var(--mono);
+  font-size: 24px;
+}
+
+.npm-card {
+  position: absolute;
+  left: 1216px;
+  top: 424px;
+  width: 600px;
+  padding: 34px 36px 28px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.npm-head {
+  font-family: var(--mono);
+  font-size: 20px;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: rgba(242, 244, 248, 0.5);
+}
+
+.npm-head span {
+  margin-left: 12px;
+  letter-spacing: 0.4px;
+  text-transform: none;
+  color: rgba(242, 244, 248, 0.35);
+}
+
+.npm-url {
+  margin-top: 18px;
+  font-family: var(--mono);
+  font-size: 24px;
+  line-height: 1.4;
+  color: #f2f4f8;
+  overflow-wrap: anywhere;
+}
+
+.npm-url span {
+  color: #9dc1ff;
+}
+
+.npm-rows {
+  margin: 28px 0 0;
+  padding-top: 22px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.16);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px 18px;
+  font-family: var(--mono);
+  font-size: 20px;
+  line-height: 1.4;
+}
+
+.npm-rows dt {
+  color: rgba(242, 244, 248, 0.45);
+}
+
+.npm-rows dd {
+  margin: 0;
+  color: #e8ecf4;
+  overflow-wrap: anywhere;
+}
+
+.npm-foot {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(242, 244, 248, 0.45);
+  font-size: 17px;
+}

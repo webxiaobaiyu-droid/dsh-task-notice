@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <title>dsh-task-notice · promo film</title>
+    <link rel="stylesheet" href="./film.css" />
+  </head>
+  <body>
+    <!--
+      One document, seven scenes. The chrome is written from timings.js at each
+      cut; the seven layers are real captures of the shipping widget against a
+      synthetic DSH workspace. Every animated property is written inline by
+      film.js — the capture walks the timeline and the picture cannot drift
+      from the measured narration.
+    -->
+    <div class="stage" id="stage">
+      <div class="kicker" id="kicker"></div>
+      <dl class="facts" id="facts"></dl>
+      <h1 class="title" id="title"></h1>
+      <p class="qualifier" id="qualifier"></p>
+      <div class="rule" id="rule"></div>
+      <div class="subs" id="subs"><div class="line" id="subs-line"></div></div>
+      <div class="progress" id="progress"></div>
+
+      <!-- 1. The whole workspace, with the bell in the corner. -->
+      <section class="layer" id="layer-intro">
+        <figure class="workspace" id="shot-intro">
+          <img src="../assets/workspace-default.png" alt="DeepSeek Harness workspace with the task-notice bell" />
+        </figure>
+        <div class="intro-ring" id="intro-ring"></div>
+        <div class="intro-tag" id="intro-tag"><span class="tagDot"></span>右上角 · 4 条未读</div>
+      </section>
+
+      <!-- 2. The feed watches every session, not just the open one. -->
+      <section class="layer" id="layer-global">
+        <figure class="shot panel-shot" id="shot-global">
+          <img src="../assets/panel-ledger.png" alt="完成台账，记录来自多个项目" />
+        </figure>
+        <div class="notes" id="global-notes">
+          <p class="noteLead">主进程订阅所有会话</p>
+          <p>后台项目跑完，铃铛也会亮</p>
+          <p>不依赖当前打开的是哪个会话</p>
+          <div class="sessionRail">
+            <span>konbini</span><span>storefront</span><span>ops-scripts</span><span class="railBell">4</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. The completion card writes down what the ledger cannot say at a glance. -->
+      <section class="layer" id="layer-card">
+        <figure class="cards-shot" id="shot-cards">
+          <img src="../assets/cards.png" alt="完成卡片：项目、会话、问题、用时" />
+        </figure>
+        <div class="notes" id="card-notes">
+          <div class="statusGrid">
+            <span data-tone="done"><i></i>完成</span>
+            <span data-tone="failed"><i></i>失败</span>
+            <span data-tone="stopped"><i></i>停止</span>
+            <span data-tone="blocked"><i></i>阻塞</span>
+          </div>
+          <p>项目、会话、你的问题、用时</p>
+          <p>点一下卡片，直接回到那个会话</p>
+        </div>
+      </section>
+
+      <!-- 4. The ledger: days, unread, and the running strip. -->
+      <section class="layer" id="layer-ledger">
+        <div class="notes" id="ledger-notes">
+          <p class="noteLead">点开铃铛，就是完成台账</p>
+          <p>按天分组，未读高亮</p>
+          <p>顶部显示还有几个任务正在跑</p>
+          <p>看过的自动收起，清空要点两次</p>
+        </div>
+        <figure class="shot panel-shot ledger-shot" id="shot-ledger">
+          <img src="../assets/panel-ledger.png" alt="按天分组的完成台账" />
+        </figure>
+        <div class="ledger-stamp" id="ledger-stamp"><b>4</b><span>UNREAD</span></div>
+      </section>
+
+      <!-- 5. Drag: the new interaction, shown as a before/after on the workspace. -->
+      <section class="layer" id="layer-drag">
+        <figure class="workspace drag-shot" id="shot-drag">
+          <img src="../assets/workspace-dragged.png" alt="通知组件被拖到左下角，面板自动翻到上方" />
+        </figure>
+        <div class="drag-ghost" id="drag-ghost"></div>
+        <div class="drag-target" id="drag-target">拖到这里</div>
+        <svg class="drag-path" id="drag-path" viewBox="0 0 1920 1080" aria-hidden="true">
+          <path d="M 858 474 C 760 548, 470 540, 268 744" />
+          <path class="arrow" d="M 280 726 L 264 748 L 292 752" />
+        </svg>
+        <div class="notes" id="drag-notes">
+          <p class="noteLead">按住铃铛、标题或卡片</p>
+          <p>拖到顺手的地方</p>
+          <p>靠近边缘，面板自动翻面</p>
+          <p>松手就记住，设置里复位</p>
+        </div>
+      </section>
+
+      <!-- 6. Sound and system notification, both optional. -->
+      <section class="layer" id="layer-sound">
+        <figure class="shot sound-shot" id="shot-sound">
+          <img src="../assets/panel-settings-moved.png" alt="通知设置：提示音、系统通知和位置" />
+        </figure>
+        <div class="notes" id="sound-notes">
+          <div class="chime" id="chime"><span></span><span></span><span></span></div>
+          <p class="noteLead">两声短铃，完成和失败不一样</p>
+          <p>窗口在后台，还能走系统通知</p>
+          <p>不需要的话，设置里都有开关</p>
+        </div>
+      </section>
+
+      <!-- 7. Install and sign-off. -->
+      <section class="layer" id="layer-install">
+        <div class="code" id="code">
+          <span class="prompt">$</span><span id="typed"></span><span class="caret" id="caret"></span>
+        </div>
+        <div class="install-hints" id="install-hints">
+          <p>也可以在插件对话框里粘贴包名</p>
+          <p>npm 搜 <span class="k">dsh-task-notice</span> · 免费开源</p>
+        </div>
+        <div class="npm-card" id="npm-card">
+          <div class="npm-head">npm <span>package</span></div>
+          <div class="npm-url">npmjs.com/package/<span>dsh-task-notice</span></div>
+          <dl class="npm-rows">
+            <dt>install</dt>
+            <dd>dsh plugin add dsh-task-notice</dd>
+            <dt>version</dt>
+            <dd>0.1.0</dd>
+            <dt>license</dt>
+            <dd>MIT</dd>
+          </dl>
+          <div class="npm-foot">记录只留在本机 · 不访问网络</div>
+        </div>
+      </section>
+    </div>
+
+    <script src="./timings.js"></script>
+    <script src="./film.js"></script>
+  </body>
+</html>

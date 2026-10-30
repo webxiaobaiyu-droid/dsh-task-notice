@@ -1,0 +1,9 @@
+{
+  // Browser half: the self-registering module-loader factory and the React
+  // widget it renders.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2024", "DOM", "DOM.Iterable"]
+  },
+  "include": ["src/client/**/*", "src/types.ts", "tests/*.client.spec.ts", "tests/*.client.spec.tsx"]
+}

@@ -1,0 +1,11 @@
+{
+  // Host half: the Cordis plugin loaded inside the dsh process plus the pure
+  // ledger it folds session events through.
+  //
+  // Split from the browser half on purpose. Both halves merge the Cordis
+  // `Context` under the same keys with different services, so one TypeScript
+  // program cannot see both — the harness splits its own typecheck the same
+  // way (`tsconfig.host.json` / `tsconfig.client.json` at its root).
+  "extends": "./tsconfig.json",
+  "include": ["src/index.ts", "src/ledger.ts", "src/types.ts", "tests/*.host.spec.ts"]
+}

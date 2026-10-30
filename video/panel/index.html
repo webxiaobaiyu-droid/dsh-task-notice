@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>dsh-task-notice · capture harness</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 1600px;
+        height: 1000px;
+        overflow: hidden;
+        background: var(--dsw-alias-bg-base, #ffffff);
+        font-family: var(--dsw-font-family, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
+      }
+
+      .app {
+        display: grid;
+        grid-template-columns: 260px minmax(0, 1fr);
+        width: 1600px;
+        height: 1000px;
+        background: var(--dsw-alias-bg-base, #ffffff);
+      }
+
+      .side {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 18px 12px 14px;
+        background: var(--dsw-alias-bg-layer-2, #f3f4f6);
+        border-right: 0.5px solid var(--dsw-alias-border-l1, #ececf0);
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        height: 32px;
+        padding: 0 8px;
+        margin-bottom: 18px;
+        color: var(--dsw-alias-label-primary, #1b1b1f);
+        font-size: 13px;
+        font-weight: 650;
+        letter-spacing: -0.01em;
+      }
+
+      .brandMark {
+        width: 18px;
+        height: 18px;
+        border-radius: 6px;
+        background: var(--dsw-static-deepseek-500, #4d6bfe);
+        box-shadow: inset 0 0 0 4px color-mix(in srgb, #fff 42%, transparent);
+      }
+
+      .sideLabel {
+        padding: 0 8px;
+        margin: 0 0 4px;
+        color: var(--dsw-alias-label-tertiary, #8b8b94);
+        font-size: 10.5px;
+        font-weight: 550;
+        letter-spacing: 0.04em;
+      }
+
+      .project {
+        display: grid;
+        grid-template-columns: 8px minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 8px;
+        height: 34px;
+        padding: 0 8px;
+        border: 0;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--dsw-alias-label-secondary, #56565f);
+        font: inherit;
+        font-size: 12px;
+        text-align: start;
+      }
+
+      .project[data-active='true'] {
+        background: var(--dsw-alias-bg-layer-1, #ffffff);
+        color: var(--dsw-alias-label-primary, #1b1b1f);
+        box-shadow: 0 1px 2px rgb(0 0 0 / 5%), 0 0 0 0.5px var(--dsw-alias-border-l2, #e3e3e8);
+        font-weight: 550;
+      }
+
+      .projectDot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--dsw-alias-border-l4, #c7c7ce);
+      }
+
+      .project[data-active='true'] .projectDot {
+        background: var(--dsw-static-deepseek-500, #4d6bfe);
+      }
+
+      .projectName {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .projectMeta {
+        color: var(--dsw-alias-label-tertiary, #8b8b94);
+        font-family: var(--ds-font-family-code, ui-monospace, monospace);
+        font-size: 9px;
+      }
+
+      .sideFoot {
+        margin-top: auto;
+        padding: 12px 8px 4px;
+        border-top: 0.5px solid var(--dsw-alias-border-l1, #ececf0);
+        color: var(--dsw-alias-label-tertiary, #8b8b94);
+        font-size: 10px;
+        line-height: 1.6;
+      }
+
+      .main {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        background:
+          radial-gradient(900px 520px at 62% 0%, color-mix(in srgb, var(--dsw-static-deepseek-500, #4d6bfe) 4%, transparent), transparent 70%),
+          var(--dsw-alias-bg-base, #ffffff);
+      }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        height: 54px;
+        padding: 0 22px;
+        border-bottom: 0.5px solid var(--dsw-alias-border-l1, #ececf0);
+        color: var(--dsw-alias-label-secondary, #56565f);
+        font-size: 12px;
+      }
+
+      .topbar strong {
+        color: var(--dsw-alias-label-primary, #1b1b1f);
+        font-weight: 600;
+      }
+
+      .topPill {
+        padding: 2px 7px;
+        border: 0.5px solid var(--dsw-alias-border-l2, #e3e3e8);
+        border-radius: 5px;
+        color: var(--dsw-alias-label-tertiary, #8b8b94);
+        font-family: var(--ds-font-family-code, ui-monospace, monospace);
+        font-size: 9px;
+      }
+
+      .thread {
+        width: min(820px, calc(100% - 96px));
+        margin: 38px auto 0;
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+      }
+
+      .threadMeta {
+        color: var(--dsw-alias-label-tertiary, #8b8b94);
+        font-size: 10.5px;
+      }
+
+      .msg {
+        max-width: 86%;
+        padding: 12px 15px;
+        border-radius: 13px;
+        font-size: 13px;
+        line-height: 1.65;
+      }
+
+      .msg.user {
+        align-self: flex-end;
+        background: color-mix(in srgb, var(--dsw-static-deepseek-500, #4d6bfe) 8%, transparent);
+        color: var(--dsw-alias-label-primary, #1b1b1f);
+      }
+
+      .msg.assistant {
+        align-self: flex-start;
+        border: 0.5px solid var(--dsw-alias-border-l1, #ececf0);
+        background: var(--dsw-alias-bg-layer-1, #ffffff);
+        color: var(--dsw-alias-label-secondary, #56565f);
+      }
+
+      .msg code {
+        font-family: var(--ds-font-family-code, ui-monospace, monospace);
+        font-size: 11.5px;
+        color: var(--dsw-alias-label-primary, #1b1b1f);
+      }
+
+      .composer {
+        width: min(820px, calc(100% - 96px));
+        margin: auto auto 28px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 46px;
+        padding: 0 14px;
+        border: 0.5px solid var(--dsw-alias-border-l2, #e3e3e8);
+        border-radius: 12px;
+        background: var(--dsw-alias-bg-layer-1, #ffffff);
+        box-shadow: 0 8px 26px rgb(20 24 32 / 5%);
+        color: var(--dsw-alias-label-tertiary, #8b8b94);
+        font-size: 12px;
+      }
+
+      .composer kbd {
+        padding: 2px 5px;
+        border: 0.5px solid var(--dsw-alias-border-l2, #e3e3e8);
+        border-radius: 4px;
+        background: var(--dsw-alias-bg-layer-2, #f3f4f6);
+        font-family: var(--ds-font-family-code, ui-monospace, monospace);
+        font-size: 9px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <aside class="side">
+        <div class="brand"><span class="brandMark"></span>DeepSeek Harness</div>
+        <div class="sideLabel">项目</div>
+        <button class="project" data-active="true"><span class="projectDot"></span><span class="projectName">konbini-nginx-deploy</span><span class="projectMeta">main</span></button>
+        <button class="project"><span class="projectDot"></span><span class="projectName">storefront-api</span><span class="projectMeta">dev</span></button>
+        <button class="project"><span class="projectDot"></span><span class="projectName">dsh-task-notice</span><span class="projectMeta">main</span></button>
+        <button class="project"><span class="projectDot"></span><span class="projectName">ops-scripts</span><span class="projectMeta">—</span></button>
+        <div class="sideFoot">4 个项目 · 6 个会话<br />本机工作区</div>
+      </aside>
+      <main class="main">
+        <header class="topbar"><strong>konbini-nginx-deploy</strong><span class="topPill">main</span><span>修复部署脚本</span></header>
+        <div class="thread">
+          <div class="threadMeta">今天 11:39 · 2 分 12 秒</div>
+          <div class="msg user">帮我把 nginx 的证书路径改到新目录，然后重启服务确认没有报错。</div>
+          <div class="msg assistant">已经改到 <code>/etc/nginx/certs</code>，配置检查通过。正在重启服务并等待健康检查。</div>
+        </div>
+        <div class="composer"><span>继续输入，或按 ⌘K 切换会话</span><kbd>⌘↵</kbd></div>
+      </main>
+    </div>
+    <div id="root"></div>
+    <script type="module" src="./main.tsx"></script>
+  </body>
+</html>

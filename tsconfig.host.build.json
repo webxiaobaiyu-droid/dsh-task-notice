@@ -1,0 +1,13 @@
+{
+  // Declaration pass for the Host half, written to `lib/types` — the layout the
+  // harness's own packages use (`rootDir: src`, `outDir: lib/types`).
+  "extends": "./tsconfig.host.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "rootDir": "src",
+    "outDir": "lib/types"
+  },
+  "include": ["src/index.ts", "src/ledger.ts", "src/types.ts"]
+}
