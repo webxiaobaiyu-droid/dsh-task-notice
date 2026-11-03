@@ -5,7 +5,7 @@ screen recording, no stock footage, no editor project.
 
 | Output | What it is |
 |---|---|
-| `out/dsh-task-notice-promo.mp4` | 1920×1080, 30 fps, H.264 High + AAC, ~4.5 MB |
+| `out/dsh-task-notice-promo.mp4` | 1920×1080, 30 fps, H.264 High + AAC, ~4.7 MB |
 | `out/dsh-task-notice-promo.srt` | the same captions as a sidecar track |
 | `out/dsh-task-notice-cover-16x9.png` | 3840×2160, 16:9 upload cover |
 | `out/dsh-task-notice-cover-4x3.png` | 3200×2400, 4:3 upload cover |
