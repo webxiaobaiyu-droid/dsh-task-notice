@@ -52,7 +52,10 @@
 如果换一台机器或换一个 profile，两种装法：
 
 ```bash
-# 从本地目录安装（开发时用这个）
+# 从 npm 安装
+dsh plugin --profile desktop add dsh-task-notice
+
+# 或从本地目录安装（开发时用这个）
 dsh plugin --profile desktop add link:/绝对路径/dsh-plugins/dsh-task-notice
 ```
 

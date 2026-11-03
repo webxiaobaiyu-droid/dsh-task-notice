@@ -1,6 +1,6 @@
 {
   "name": "dsh-task-notice",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Task completion notice for DeepSeek Harness: a global widget that tells you which project and session just finished, what was asked, and lets you jump straight back.",
   "keywords": [
     "deepseek-harness",
@@ -69,5 +69,13 @@
     "tsdown": "^0.22.2",
     "typescript": "~5.9.0",
     "vitest": "^4.1.8"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/webxiaobaiyu-droid/dsh-task-notice.git"
+  },
+  "homepage": "https://github.com/webxiaobaiyu-droid/dsh-task-notice#readme",
+  "bugs": {
+    "url": "https://github.com/webxiaobaiyu-droid/dsh-task-notice/issues"
   }
 }
