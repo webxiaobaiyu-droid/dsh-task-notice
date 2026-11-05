@@ -26,6 +26,7 @@
 - **全局小组件。** 右上角一只铃铛，有未读就带数字；点开是完成台账，按天分组，未读高亮。
 - **拖到顺手的位置。** 按住铃铛、面板标题或完成卡片都能拖；靠近边角时面板会自动翻到有空间的一侧，位置记在本机，设置里一键复位。
 - **完成卡片。** 新完成的任务从右上角滑出，写清项目、会话、问题和用时；鼠标停住不会自动消失，点卡片直接跳回会话。
+- **需要你决定的任务单独提醒。** 模型发起 `ask_user_question` 时，铃铛变成琥珀色，面板和卡片会显示问题、分支选项和项目；点一下回到会话里做选择，AI 才能继续。这条提醒比普通完成通知优先，也不会在几秒后自动消失。
 - **知道还有什么在跑。** 面板顶部会显示当前有几个任务正在运行。
 - **可选系统通知。** 窗口不在前台时，可以再走一次系统通知（需要浏览器授权），点击同样跳回会话。
 - **记得住。** 最近 100 条完成记录落在 `~/.dsh/task-notice/history.json`，重启后仍在；可以一键清空。
@@ -150,7 +151,7 @@ dsh plugin --profile desktop add link:/绝对路径/dsh-plugins/dsh-task-notice
 cd ~/dsh-plugins/dsh-task-notice
 pnpm install
 DSH_SRC=/Users/openSource/deepseek-harness pnpm run link:host
-pnpm test          # 47 项，Host 折叠 + 浏览器规则 + 拖动几何
+pnpm test          # 57 项，Host 折叠 + 浏览器规则 + 拖动几何 + 待决定
 pnpm typecheck
 pnpm build         # lib/index.js + lib/client.js + lib/types
 ```
@@ -178,3 +179,4 @@ pnpm build         # lib/index.js + lib/client.js + lib/types
 - 多个窗口会各自提醒、各自记「已读」和「已点开」；目前没有跨窗口同步这些状态。
 - 只按「一轮对话结束」提醒。一次提问如果被拆成多轮（排队消息、继续执行），会按实际轮次各提醒一次。
 - 系统通知依赖浏览器/Electron 的 `Notification` 实现，权限被拒时只在设置里说明，不反复弹窗。
+- 待决定提醒来自 Host 正在观察的会话事件；插件启动前就已经挂着的问题不会补发，回答后也不会留下完成记录。

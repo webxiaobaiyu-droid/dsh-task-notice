@@ -43,6 +43,54 @@ export interface CompletionRecord {
   readonly subagent: boolean
 }
 
+/** One selectable answer in a decision the model asked the person to make. */
+export interface DecisionOption {
+  /** Short label the person can choose. */
+  readonly label: string
+  /** Optional one-line tradeoff shown under the label. */
+  readonly description?: string
+}
+
+/** One question inside a pending decision. */
+export interface DecisionQuestion {
+  /** Stable caller-provided question id. */
+  readonly id: string
+  /** The question to show the person. */
+  readonly question: string
+  /** Optional short heading, such as "Confirm" or "Choose Mode". */
+  readonly header?: string
+  /** Optional supporting detail. */
+  readonly detail?: string
+  /** Choices the person can pick from. */
+  readonly options?: readonly DecisionOption[]
+  /** Whether more than one option may be selected. */
+  readonly multiSelect?: boolean
+}
+
+/** A turn that is paused until the person answers a question. */
+export interface PendingDecision {
+  /** Stable per call: session id + tool call id. */
+  readonly id: string
+  /** Session waiting for the answer. */
+  readonly sessionId: string
+  /** Turn that is paused. */
+  readonly turn: number
+  /** Latest known session title, or the prompt's opening words. */
+  readonly title: string
+  /** What the person originally asked. */
+  readonly prompt: string
+  /** Display name of the project. */
+  readonly project: string
+  /** Absolute project directory, when recorded. */
+  readonly cwd?: string
+  /** Questions the model asked in this call. */
+  readonly questions: readonly DecisionQuestion[]
+  /** When the question was recorded. */
+  readonly createdAt: number
+  /** Whether a subagent asked rather than a person's main session. */
+  readonly subagent: boolean
+}
+
 /** One session working right now. */
 export interface RunningTask {
   /** Session doing the work. */
@@ -71,6 +119,8 @@ export interface NoticeSnapshot {
   readonly records: readonly CompletionRecord[]
   /** Sessions working right now, newest turn first. */
   readonly running: readonly RunningTask[]
+  /** Turns paused on a question that still needs an answer, newest first. */
+  readonly decisions: readonly PendingDecision[]
   /** Host clock when the snapshot was taken. */
   readonly now: number
 }

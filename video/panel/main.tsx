@@ -17,7 +17,7 @@ import { createRoot } from 'react-dom/client'
 import { NoticeWidget, type NoticeWidgetProps } from '../../src/client/NoticeWidget.tsx'
 import { zh } from '../../src/client/locales.ts'
 import { styles } from '../../src/client/styles.ts'
-import type { CompletionRecord, NoticeSnapshot } from '../../src/types.ts'
+import type { CompletionRecord, NoticeSnapshot, PendingDecision } from '../../src/types.ts'
 
 const styleTag = document.createElement('style')
 styleTag.dataset.pluginCss = 'dsh-task-notice'
@@ -78,11 +78,12 @@ const running = [
 
 let state: { status: 'ready'; snapshot: NoticeSnapshot; error: undefined } = {
   status: 'ready',
-  snapshot: { bootId: 'capture', revision: 1, records, running, now },
+  snapshot: { bootId: 'capture', revision: 1, records, running, decisions: [], now },
   error: undefined,
 }
 const listeners = new Set<() => void>()
 let completionListener: (records: readonly CompletionRecord[]) => void = () => {}
+let decisionListener: (decisions: readonly PendingDecision[]) => void = () => {}
 
 const store = {
   getState: () => state,
@@ -93,6 +94,10 @@ const store = {
   onCompletions: (listener: (records: readonly CompletionRecord[]) => void) => {
     completionListener = listener
     return () => { completionListener = () => {} }
+  },
+  onDecisions: (listener: (decisions: readonly PendingDecision[]) => void) => {
+    decisionListener = listener
+    return () => { decisionListener = () => {} }
   },
   start: () => () => {},
   clear: async () => {},
@@ -181,6 +186,7 @@ interface NoticeHandle {
   settings: () => Promise<void>
   back: () => Promise<void>
   pushCard: (status?: 'done' | 'failed') => Promise<void>
+  pushDecision: () => Promise<void>
   setPosition: (position: { right: number; top: number }) => void
   clearPosition: () => void
 }
@@ -220,6 +226,36 @@ window.__notice = {
     back.click()
     await nextPaint()
     await new Promise(resolve => setTimeout(resolve, 150))
+  },
+  pushDecision: async () => {
+    const decision: PendingDecision = {
+      id: 's-card-decision:c1',
+      sessionId: 's-card-decision',
+      turn: 1,
+      title: '部署前确认',
+      prompt: '把这次改动合进去之前，先确认一下分支。',
+      project: 'storefront-api',
+      cwd: '/Users/Admin/work/storefront-api',
+      questions: [{
+        id: 'branch',
+        header: '选择分支',
+        question: '要合并到 main，还是先发到 preview？',
+        options: [
+          { label: 'main', description: '直接合并' },
+          { label: 'preview', description: '先跑一遍完整检查' },
+        ],
+      }],
+      createdAt: Date.now(),
+      subagent: false,
+    }
+    state = {
+      ...state,
+      snapshot: { ...state.snapshot, revision: state.snapshot.revision + 1, decisions: [decision], now: Date.now() },
+    }
+    for (const listener of [...listeners]) listener()
+    decisionListener([decision])
+    await waitFor(() => document.querySelector('.dtn-card[data-status="decision"]'), 'the decision card never appeared')
+    await new Promise(resolve => setTimeout(resolve, 320))
   },
   pushCard: async (status = 'done') => {
     const record = cardRecord(status === 'done' ? 1 : 2, status)

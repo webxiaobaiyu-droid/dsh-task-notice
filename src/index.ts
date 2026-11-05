@@ -37,7 +37,7 @@ import {
 } from './types.ts'
 
 export type * from './types.ts'
-export { NoticeLedger, oneLine, projectOf, promptText, statusOf } from './ledger.ts'
+export { NoticeLedger, decisionQuestionsOf, oneLine, projectOf, promptText, statusOf } from './ledger.ts'
 export type { ObserveResult, SessionFacts } from './ledger.ts'
 
 /** Plugin name the loader row addresses. */
@@ -186,6 +186,7 @@ class NoticeHost {
       revision: this.ledger.revision,
       records: this.ledger.list(),
       running: this.ledger.running(),
+      decisions: this.ledger.pendingDecisions(),
       now: Date.now(),
     }
   }

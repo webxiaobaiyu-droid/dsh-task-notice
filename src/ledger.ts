@@ -22,7 +22,13 @@
 
 import type { SessionEvent, TurnEndReason } from '@deepseek-ai/dsh-session'
 import type {} from '@deepseek-ai/dsh-session-title'
-import type { CompletionRecord, NoticeStatus, RunningTask } from './types.ts'
+import type {
+  CompletionRecord,
+  DecisionQuestion,
+  NoticeStatus,
+  PendingDecision,
+  RunningTask,
+} from './types.ts'
 
 /** The slice of a Session the ledger needs, read at event time. */
 export interface SessionFacts {
@@ -53,6 +59,12 @@ const FALLBACK_TITLE_CHARS = 40
 
 /** Longest error or cancellation detail kept. */
 const MAX_DETAIL_CHARS = 180
+
+/** Bounds for the words a pending decision carries through the snapshot. */
+const MAX_QUESTION_CHARS = 300
+const MAX_DECISION_DETAIL_CHARS = 500
+const MAX_OPTION_CHARS = 80
+const MAX_OPTION_DESCRIPTION_CHARS = 200
 
 /**
  * Collapse whitespace and bound a string.
@@ -102,6 +114,99 @@ export function promptText(content: readonly { readonly type: string; readonly t
   return oneLine(parts.join(' '), MAX_PROMPT_CHARS)
 }
 
+/** Whether a parsed JSON value is a plain object. */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+/** One bounded, whitespace-collapsed string from an unknown field. */
+function textOf(value: unknown, max: number): string | undefined {
+  if (typeof value !== 'string') return undefined
+  const text = oneLine(value, max)
+  return text === '' ? undefined : text
+}
+
+/**
+ * Read the questions out of an `ask_user_question` tool call's raw arguments.
+ *
+ * The call is the only durable signal that a turn is waiting on a person; the
+ * tool result settles it later. Malformed arguments never reach a card, so this
+ * returns `undefined` rather than inventing a question.
+ *
+ * @param argumentsText - raw JSON arguments recorded on `tool/call`.
+ * @returns the bounded questions, or `undefined` when the payload is unusable.
+ */
+export function decisionQuestionsOf(argumentsText: string): readonly DecisionQuestion[] | undefined {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(argumentsText)
+  } catch {
+    return undefined
+  }
+  if (!isRecord(parsed) || !Array.isArray(parsed.questions)) return undefined
+  const questions: DecisionQuestion[] = []
+  for (const item of parsed.questions) {
+    if (!isRecord(item)) continue
+    const id = textOf(item.id, MAX_OPTION_CHARS)
+    const question = textOf(item.question, MAX_QUESTION_CHARS)
+    if (id === undefined || question === undefined) continue
+    const header = textOf(item.header, MAX_OPTION_CHARS)
+    const detail = textOf(item.detail, MAX_DECISION_DETAIL_CHARS)
+    const options: { readonly label: string; readonly description?: string }[] = []
+    if (Array.isArray(item.options)) {
+      for (const option of item.options) {
+        if (!isRecord(option)) continue
+        const label = textOf(option.label, MAX_OPTION_CHARS)
+        if (label === undefined) continue
+        const description = textOf(option.description, MAX_OPTION_DESCRIPTION_CHARS)
+        options.push(description === undefined ? { label } : { label, description })
+      }
+    }
+    const multiSelect = typeof item.multi_select === 'boolean'
+      ? item.multi_select
+      : typeof item.multiSelect === 'boolean' ? item.multiSelect : undefined
+    questions.push({
+      id,
+      question,
+      ...header === undefined ? {} : { header },
+      ...detail === undefined ? {} : { detail },
+      ...options.length === 0 ? {} : { options },
+      ...multiSelect === undefined ? {} : { multiSelect },
+    })
+  }
+  return questions.length === 0 ? undefined : questions
+}
+
+/**
+ * Whether a tool result is the timed tool's `{ pending: true }` payload.
+ *
+ * That payload means the foreground wait ended but the question is still
+ * answerable as `continued`; it is not an answer and must not clear the notice.
+ *
+ * @param message - the recorded tool result message.
+ * @returns whether the question remains answerable.
+ */
+function isPendingToolResult(message: {
+  readonly isError?: boolean
+  readonly content: readonly { readonly type: string; readonly text?: string }[]
+}): boolean {
+  if (message.isError === true) return false
+  const block = message.content.find(item => item.type === 'text')
+  if (block?.text === undefined) return false
+  try {
+    const parsed: unknown = JSON.parse(block.text)
+    return isRecord(parsed) && parsed.pending === true
+  } catch {
+    return false
+  }
+}
+
+/** One live question call and whether its turn is still holding the tool open. */
+interface DecisionState {
+  record: PendingDecision
+  state: 'open' | 'continued'
+}
+
 /**
  * Reduce a turn's end reason to a notice status.
  * @param reason - the durable reason.
@@ -145,6 +250,7 @@ export class NoticeLedger {
   private readonly records: CompletionRecord[] = []
   private readonly turns = new Map<string, TurnState>()
   private readonly pending = new Map<string, string>()
+  private readonly decisions = new Map<string, DecisionState>()
   private readonly titles = new Map<string, string>()
   private readonly maxRecords: number
   private readonly includeSubagents: boolean
@@ -172,6 +278,13 @@ export class NoticeLedger {
   /** Every kept record, newest first. */
   list(): readonly CompletionRecord[] {
     return this.records
+  }
+
+  /** Questions still waiting for a person, newest first. */
+  pendingDecisions(): readonly PendingDecision[] {
+    return [...this.decisions.values()]
+      .map(item => item.record)
+      .sort((a, b) => b.createdAt - a.createdAt)
   }
 
   /** Sessions working right now, newest turn first. */
@@ -223,6 +336,47 @@ export class NoticeLedger {
   observe(facts: SessionFacts, event: SessionEvent): ObserveResult {
     if (facts.subagent && !this.includeSubagents) return 'none'
     switch (event.type) {
+      case 'tool/call': {
+        if (event.data.name !== 'ask_user_question') return 'none'
+        const questions = decisionQuestionsOf(event.data.arguments)
+        if (questions === undefined) return 'none'
+        const callId = String(event.data.callId)
+        const id = `${facts.id}:${callId}`
+        if (this.decisions.has(id)) return 'none'
+        const turn = this.turns.get(facts.id)
+        const prompt = turn?.prompt ?? this.pending.get(facts.id) ?? ''
+        const record: PendingDecision = {
+          id,
+          sessionId: facts.id,
+          turn: event.data.turn,
+          title: this.titleOf(facts.id, prompt),
+          prompt,
+          project: projectOf(facts.cwd),
+          ...facts.cwd === undefined ? {} : { cwd: facts.cwd },
+          questions,
+          createdAt: event.time,
+          subagent: facts.subagent,
+        }
+        this.decisions.set(id, { record, state: 'open' })
+        this.rev += 1
+        return 'updated'
+      }
+      case 'tool/result': {
+        const id = `${facts.id}:${String(event.data.message.toolCallId)}`
+        const decision = this.decisions.get(id)
+        if (decision === undefined) return 'none'
+        // A timed wait that returned pending, and a call resumed after a crash,
+        // both leave the question answerable even though a tool result exists.
+        if (event.data.error?.code === 'TOOL_OUTCOME_UNKNOWN' || isPendingToolResult(event.data.message)) {
+          if (decision.state === 'continued') return 'none'
+          decision.state = 'continued'
+          this.rev += 1
+          return 'updated'
+        }
+        this.decisions.delete(id)
+        this.rev += 1
+        return 'updated'
+      }
       case 'turn/start': {
         const pending = this.pending.get(facts.id) ?? ''
         this.pending.delete(facts.id)
@@ -236,6 +390,11 @@ export class NoticeLedger {
         return 'updated'
       }
       case 'user/message': {
+        const source = event.data.source as { readonly kind?: string; readonly callId?: unknown }
+        if (source.kind === 'user-question-reply' && typeof source.callId === 'string') {
+          if (this.decisions.delete(`${facts.id}:${source.callId}`)) this.rev += 1
+          return 'none'
+        }
         const text = promptText(event.data.content)
         if (text === '') return 'none'
         this.pending.set(facts.id, text)
@@ -257,10 +416,23 @@ export class NoticeLedger {
           ;(record as { title: string }).title = title
           changed = true
         }
+        for (const item of this.decisions.values()) {
+          if (item.record.sessionId !== facts.id || item.record.title === title) continue
+          item.record = { ...item.record, title }
+          changed = true
+        }
         if (changed) this.rev += 1
         return changed ? 'updated' : 'none'
       }
       case 'turn/end': {
+        // A question whose turn ends without a continued wait is no longer
+        // answerable; a timed wait that returned pending survives the turn.
+        const settled = event.data.reason.kind === 'completed' || event.data.reason.kind === 'max-tokens'
+        for (const [id, item] of this.decisions) {
+          if (item.record.sessionId !== facts.id || item.record.turn !== event.data.turn) continue
+          if (settled && item.state === 'continued') continue
+          this.decisions.delete(id)
+        }
         const turn = this.turns.get(facts.id)
         this.turns.delete(facts.id)
         const prompt = turn?.prompt ?? this.pending.get(facts.id) ?? ''
@@ -305,7 +477,13 @@ export class NoticeLedger {
   forget(sessionId: string): void {
     const hadTurn = this.turns.delete(sessionId)
     const hadPending = this.pending.delete(sessionId)
-    if (hadTurn || hadPending) this.rev += 1
+    let hadDecision = false
+    for (const [id, item] of this.decisions) {
+      if (item.record.sessionId !== sessionId) continue
+      this.decisions.delete(id)
+      hadDecision = true
+    }
+    if (hadTurn || hadPending || hadDecision) this.rev += 1
   }
 
   /** A title to print: the latest logged one, else the prompt's opening words. */

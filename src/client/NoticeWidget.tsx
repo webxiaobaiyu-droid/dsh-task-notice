@@ -27,10 +27,10 @@ import {
   type ReactNode,
 } from 'react'
 import type { InjectFace, PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots'
-import type { CompletionRecord } from '../types.ts'
+import type { CompletionRecord, PendingDecision } from '../types.ts'
 import { BackIcon, BellIcon, BlockedIcon, CheckIcon, CloseIcon, CrossIcon, GearIcon, StopIcon } from './icons.tsx'
 import { clip, durationParts, formatClock } from './format.ts'
-import { dayTitle, groupByDay, shouldAlert, titleAddsContext, unreadRecords, visibleRecords } from './model.ts'
+import { dayTitle, groupByDay, shouldAlert, shouldAlertDecision, titleAddsContext, unreadRecords, visibleRecords } from './model.ts'
 import { requestSystemPermission, showSystemNotice, systemPermission } from './notify.ts'
 import {
   clearPosition,
@@ -58,7 +58,7 @@ export interface NoticeWidgetInjected {
   readonly entered: EnteredStore
   /** The session bound to the centre column, read at event time. */
   readonly currentSessionId: () => string | undefined
-  /** Open a finished session; false when it no longer exists. */
+  /** Open a session from a notice; false when it no longer exists. */
   readonly openSession: (sessionId: string) => boolean
 }
 
@@ -130,6 +130,7 @@ export function NoticeWidget(props: NoticeWidgetProps): ReactNode {
     return stored === undefined ? undefined : clampPosition(stored, currentViewport())
   })
   const [dragging, setDragging] = useState(false)
+  const [openedDecisions, setOpenedDecisions] = useState<ReadonlySet<string>>(new Set())
 
   const rootRef = useRef<HTMLDivElement | null>(null)
   const openRef = useRef(open)
@@ -148,10 +149,30 @@ export function NoticeWidget(props: NoticeWidgetProps): ReactNode {
 
   const records = state.snapshot?.records ?? []
   const running = state.snapshot?.running ?? []
+  const decisions = state.snapshot?.decisions ?? []
   const now = state.snapshot?.now ?? Date.now()
   const visible = useMemo(() => visibleRecords(records, enteredIds), [records, enteredIds])
   const unread = unreadRecords(visible, seenAt)
+  const attention = unread.length + decisions.length
+  const shownDecisions = decisions
+    .filter(decision => !openedDecisions.has(decision.id))
+    .slice(0, MAX_CARDS)
+  const shownCards = cards.slice(0, Math.max(0, MAX_CARDS - shownDecisions.length))
   const groups = useMemo(() => groupByDay(visible, now), [visible, now])
+
+  const openDecision = useCallback((decision: PendingDecision): void => {
+    if (!openSession(decision.sessionId)) {
+      setOpen(true)
+      setView('list')
+      setNote({ text: tRef.current('gone'), tone: 'error' })
+      return
+    }
+    // The question stays in the ledger until it is actually answered; opening
+    // the session is a navigation, not a resolution. Hide its floating card so
+    // it does not sit on top of the question the person is answering.
+    setOpenedDecisions(previous => new Set(previous).add(decision.id))
+    setOpen(false)
+  }, [openSession])
 
   const openRecord = useCallback((record: CompletionRecord): void => {
     if (!openSession(record.sessionId)) {
@@ -320,6 +341,40 @@ export function NoticeWidget(props: NoticeWidgetProps): ReactNode {
     window.setTimeout(() => { setFresh(false) }, 700)
   }), [store, currentSessionId, openRecord])
 
+  /** A question arrived: this is the high-priority interruption. */
+  useEffect(() => store.onDecisions((arrived) => {
+    const policy = {
+      always: prefsRef.current.always,
+      currentSessionId: currentSessionId(),
+      background: document.hidden || !document.hasFocus(),
+    }
+    const wanted = arrived.filter(decision => shouldAlertDecision(decision, policy))
+    if (wanted.length === 0) return
+    const current = tRef.current
+    if (prefsRef.current.sound) playChime('decision', prefsRef.current.volume)
+    if (prefsRef.current.system && document.hidden) {
+      for (const decision of wanted) {
+        const question = decision.questions[0]
+        showSystemNotice({
+          title: current('decisionSystemTitle', {
+            project: decision.project === '' ? current('unknownProject') : decision.project,
+          }),
+          body: current('decisionSystemBody', {
+            question: question?.header === undefined
+              ? question?.question ?? current('untitled')
+              : `${question.header} · ${question.question}`,
+          }),
+          tag: decision.id,
+          onClick: () => {
+            openDecision(decision)
+          },
+        })
+      }
+    }
+    setFresh(true)
+    window.setTimeout(() => { setFresh(false) }, 700)
+  }), [store, currentSessionId, openDecision])
+
   /** Looking at the ledger counts as reading it, including while it is open. */
   useEffect(() => {
     if (!open || view !== 'list') return
@@ -428,6 +483,7 @@ export function NoticeWidget(props: NoticeWidgetProps): ReactNode {
         className="dtn-dock"
         data-open={open ? 'true' : 'false'}
         data-fresh={fresh ? 'true' : 'false'}
+        data-decision={decisions.length > 0 ? 'true' : 'false'}
         data-drag-handle="dock"
         aria-expanded={open}
         aria-label={t('dock')}
@@ -436,8 +492,10 @@ export function NoticeWidget(props: NoticeWidgetProps): ReactNode {
         onKeyDown={moveWithKeyboard}
       >
         <span className="dtn-dockIcon"><BellIcon size={19} /></span>
-        {unread.length > 0 ? (
-          <span className="dtn-badge">{unread.length > 99 ? '99+' : unread.length}</span>
+        {attention > 0 ? (
+          <span className="dtn-badge" data-tone={decisions.length > 0 ? 'decision' : 'unread'}>
+            {attention > 99 ? '99+' : attention}
+          </span>
         ) : null}
         {running.length > 0 ? <span className="dtn-live" aria-hidden="true" /> : null}
       </button>
@@ -461,12 +519,21 @@ export function NoticeWidget(props: NoticeWidgetProps): ReactNode {
             ) : null}
             <div className="dtn-headText">
               <h2 className="dtn-title">{view === 'settings' ? t('settingsTitle') : t('title')}</h2>
-              <p className="dtn-sub" data-tone={view === 'list' && unread.length > 0 ? 'unread' : 'normal'}>
+              <p
+                className="dtn-sub"
+                data-tone={view === 'list' && decisions.length > 0
+                  ? 'decision'
+                  : view === 'list' && unread.length > 0 ? 'unread' : 'normal'}
+              >
                 {view === 'settings'
                   ? t('settingsSub')
-                  : unread.length > 0
-                    ? unread.length === 1 ? t('unreadOne') : t('unread', { count: unread.length })
-                    : t('subtitle')}
+                  : decisions.length > 0
+                    ? decisions.length === 1
+                      ? t('decisionSubOne')
+                      : t('decisionSub', { count: decisions.length })
+                    : unread.length > 0
+                      ? unread.length === 1 ? t('unreadOne') : t('unread', { count: unread.length })
+                      : t('subtitle')}
               </p>
             </div>
             {view === 'list' && unread.length > 0 ? (
@@ -581,9 +648,12 @@ export function NoticeWidget(props: NoticeWidgetProps): ReactNode {
               {note !== undefined ? (
                 <div className="dtn-inlineNote" data-tone={note.tone}>{note.text}</div>
               ) : null}
+              {decisions.length > 0 ? (
+                <DecisionList decisions={decisions} t={t} onOpen={openDecision} />
+              ) : null}
               {running.length > 0 ? <RunningStrip label={runningLabel(running.length, t)} /> : null}
               <div className="dtn-list">
-                {groups.length === 0 ? (
+                {groups.length === 0 && decisions.length === 0 ? (
                   <div className="dtn-empty">
                     <div className="dtn-emptyIcon"><BellIcon size={21} /></div>
                     <p className="dtn-emptyTitle">{t(records.length === 0 ? 'emptyTitle' : 'emptyEnteredTitle')}</p>
@@ -623,9 +693,17 @@ export function NoticeWidget(props: NoticeWidgetProps): ReactNode {
             </>
           )}
         </section>
-      ) : cards.length > 0 ? (
+      ) : shownDecisions.length > 0 || shownCards.length > 0 ? (
         <div className="dtn-cards">
-          {cards.map(record => (
+          {shownDecisions.map(decision => (
+            <DecisionCard
+              key={decision.id}
+              decision={decision}
+              t={t}
+              onOpen={() => { openDecision(decision) }}
+            />
+          ))}
+          {shownCards.map(record => (
             <CompletionCard
               key={record.id}
               record={record}
@@ -652,6 +730,96 @@ function dayLabel(label: 'today' | 'yesterday' | 'other', key: string, t: Notice
   if (label === 'today') return t('today')
   if (label === 'yesterday') return t('yesterday')
   return dayTitle(key, typeof navigator === 'undefined' ? 'zh-CN' : navigator.language)
+}
+
+/** The high-priority block that comes before the ordinary ledger. */
+function DecisionList({ decisions, t, onOpen }: {
+  readonly decisions: readonly PendingDecision[]
+  readonly t: NoticeWidgetProps['t']
+  readonly onOpen: (decision: PendingDecision) => void
+}): ReactNode {
+  return (
+    <section className="dtn-decisions" aria-label={t('decisionTitle')}>
+      <div className="dtn-decisionHead">
+        <span className="dtn-decisionMark" aria-hidden="true">!</span>
+        <span>{t('decisionTitle')}</span>
+        <span className="dtn-decisionCount">{decisions.length}</span>
+      </div>
+      {decisions.map(decision => {
+        const question = decision.questions[0]
+        const project = decision.project === '' ? t('unknownProject') : decision.project
+        const label = question === undefined
+          ? t('untitled')
+          : question.header === undefined ? question.question : `${question.header} · ${question.question}`
+        const options = question?.options?.slice(0, 3) ?? []
+        return (
+          <button
+            key={decision.id}
+            type="button"
+            className="dtn-decisionRow"
+            title={decision.cwd ?? project}
+            aria-label={`${project} · ${label} · ${t('decisionOpen')}`}
+            onClick={() => { onOpen(decision) }}
+          >
+            <span className="dtn-decisionTop">
+              <span className="dtn-decisionProject">{project}</span>
+              <span className="dtn-decisionTime">{formatClock(decision.createdAt)}</span>
+            </span>
+            <span className="dtn-decisionQuestion">{label}</span>
+            {options.length > 0 ? (
+              <span className="dtn-decisionOptions">
+                {options.map(option => <span key={option.label}>{option.label}</span>)}
+              </span>
+            ) : null}
+            <span className="dtn-decisionFoot">
+              <span>{decision.questions.length > 1
+                ? t('decisionQuestions', { count: decision.questions.length })
+                : t('decisionHint')}</span>
+              <span className="dtn-decisionOpen">{t('decisionOpen')} →</span>
+            </span>
+          </button>
+        )
+      })}
+    </section>
+  )
+}
+
+/** A pending question as a card that does not time out. */
+function DecisionCard({ decision, t, onOpen }: {
+  readonly decision: PendingDecision
+  readonly t: NoticeWidgetProps['t']
+  readonly onOpen: () => void
+}): ReactNode {
+  const project = decision.project === '' ? t('unknownProject') : decision.project
+  const question = decision.questions[0]
+  const prompt = question?.question ?? (decision.prompt === '' ? t('untitled') : decision.prompt)
+  const options = question?.options?.slice(0, 3) ?? []
+  return (
+    <article className="dtn-card" data-status="decision" data-kind="decision">
+      <button
+        type="button"
+        className="dtn-cardMain"
+        data-drag-handle="card"
+        title={t('cardDragHint')}
+        onClick={onOpen}
+        aria-label={`${project} · ${prompt} · ${t('decisionOpen')}`}
+      >
+        <span className="dtn-cardTop">
+          <span className="dtn-cardKind">{t('decisionTitle')}</span>
+          <span className="dtn-cardProject">{project}</span>
+          <span className="dtn-cardTime">{formatClock(decision.createdAt)}</span>
+        </span>
+        <span className="dtn-cardPrompt">{prompt}</span>
+        {options.length > 0 ? (
+          <span className="dtn-cardOptions">
+            {options.map(option => <span key={option.label}>{option.label}</span>)}
+          </span>
+        ) : (
+          <span className="dtn-cardSession">{t('decisionHint')}</span>
+        )}
+      </button>
+    </article>
+  )
 }
 
 /** One ledger row. */

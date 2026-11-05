@@ -15,7 +15,7 @@
  * @module dsh-task-notice/client/state
  */
 
-import { MAX_WAIT_MS, type CompletionRecord, type NoticeSnapshot } from '../types.ts'
+import { MAX_WAIT_MS, type CompletionRecord, type NoticeSnapshot, type PendingDecision } from '../types.ts'
 import { clearHistory, fetchSnapshot } from './api.ts'
 import { highestSeq, newRecords } from './model.ts'
 
@@ -40,6 +40,8 @@ export class NoticeStore {
   private state: NoticeState = { status: 'loading', snapshot: undefined, error: undefined }
   private readonly listeners = new Set<() => void>()
   private readonly completions = new Set<(records: readonly CompletionRecord[]) => void>()
+  private readonly decisions = new Set<(decisions: readonly PendingDecision[]) => void>()
+  private decisionIds = new Set<string>()
   private controller: AbortController | undefined
   private lastSeq = -1
   private revision = 0
@@ -65,6 +67,18 @@ export class NoticeStore {
     this.completions.add(listener)
     return () => {
       this.completions.delete(listener)
+    }
+  }
+
+  /**
+   * Subscribe to questions that newly became pending.
+   * @param listener - receives decisions not present in the previous snapshot.
+   * @returns the unsubscriber.
+   */
+  onDecisions(listener: (decisions: readonly PendingDecision[]) => void): () => void {
+    this.decisions.add(listener)
+    return () => {
+      this.decisions.delete(listener)
     }
   }
 
@@ -101,6 +115,9 @@ export class NoticeStore {
     const restarted = this.bootId !== undefined && this.bootId !== snapshot.bootId
     const first = this.lastSeq < 0 || restarted
     const fresh = first ? [] : newRecords(snapshot.records, this.lastSeq)
+    const decisionList = snapshot.decisions ?? []
+    const freshDecisions = first ? [] : decisionList.filter(item => !this.decisionIds.has(item.id))
+    this.decisionIds = new Set(decisionList.map(item => item.id))
     this.bootId = snapshot.bootId
     // A new Host process starts its sequence at the persisted high-water mark,
     // which can be below this page's cursor if that history was cleared. Taking
@@ -111,6 +128,9 @@ export class NoticeStore {
     this.publish({ status: 'ready', snapshot, error: undefined })
     if (fresh.length > 0) {
       for (const listener of [...this.completions]) listener(fresh)
+    }
+    if (freshDecisions.length > 0) {
+      for (const listener of [...this.decisions]) listener(freshDecisions)
     }
   }
 

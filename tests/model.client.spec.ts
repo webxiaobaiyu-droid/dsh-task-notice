@@ -10,6 +10,7 @@ import {
   highestSeq,
   newRecords,
   shouldAlert,
+  shouldAlertDecision,
   titleAddsContext,
   unreadRecords,
   visibleRecords,
@@ -137,5 +138,24 @@ describe('groupByDay', () => {
     ], now)
     expect(groups).toHaveLength(2)
     expect(groups[1]?.label).toBe('other')
+  })
+})
+
+
+describe('shouldAlertDecision', () => {
+  it('announces a question from another session', () => {
+    expect(shouldAlertDecision({
+      id: 's1:c1', sessionId: 's1', turn: 1, title: '部署', prompt: '部署',
+      project: 'app', questions: [{ id: 'q', question: '选 main 还是 preview？' }],
+      createdAt: 1, subagent: false,
+    }, { always: false, currentSessionId: 's2', background: false })).toBe(true)
+  })
+
+  it('stays quiet for the question already on screen', () => {
+    expect(shouldAlertDecision({
+      id: 's1:c1', sessionId: 's1', turn: 1, title: '部署', prompt: '部署',
+      project: 'app', questions: [{ id: 'q', question: '选 main 还是 preview？' }],
+      createdAt: 1, subagent: false,
+    }, { always: false, currentSessionId: 's1', background: false })).toBe(false)
   })
 })

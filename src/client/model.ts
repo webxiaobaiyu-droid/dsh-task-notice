@@ -16,7 +16,7 @@
  * @module dsh-task-notice/client/model
  */
 
-import type { CompletionRecord } from '../types.ts'
+import type { CompletionRecord, PendingDecision } from '../types.ts'
 import { daysBefore, dayKey, sameDay } from './format.ts'
 
 /** The subset of settings the alert decision needs. */
@@ -40,6 +40,24 @@ export function shouldAlert(record: CompletionRecord, policy: AlertPolicy): bool
   if (policy.always) return true
   if (policy.background) return true
   return record.sessionId !== policy.currentSessionId
+}
+
+/**
+ * Whether a pending question deserves a toast and a chime.
+ *
+ * A decision is not a finished turn, but it has the same attention rule: a
+ * question in the conversation already on screen is visible there, while a
+ * question in another project is exactly what this widget exists to surface.
+ *
+ * @param decision - a newly arrived pending decision.
+ * @param policy - what the window is showing right now.
+ * @returns whether to interrupt.
+ */
+export function shouldAlertDecision(decision: PendingDecision, policy: AlertPolicy): boolean {
+  if (decision.subagent) return false
+  if (policy.always) return true
+  if (policy.background) return true
+  return decision.sessionId !== policy.currentSessionId
 }
 
 /**

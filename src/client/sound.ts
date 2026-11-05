@@ -100,12 +100,13 @@ function strike(context: AudioContext, output: AudioNode, at: number, frequency:
 }
 
 /**
- * Play the figure for one completion.
- * @param tone - `done` rises, everything else falls.
+ * Play the figure for one completion or decision.
+ * @param tone - `done` rises, `failed` falls, `decision` climbs a third,
+ *   higher step so a question is recognisable before the words are read.
  * @param volume - 0–1 gain.
  * @returns whether a figure was actually scheduled.
  */
-export function playChime(tone: 'done' | 'failed', volume: number): boolean {
+export function playChime(tone: 'done' | 'failed' | 'decision', volume: number): boolean {
   const context = audio
   if (context === undefined || context.state !== 'running' || volume <= 0) return false
   const now = Date.now()
@@ -115,6 +116,12 @@ export function playChime(tone: 'done' | 'failed', volume: number): boolean {
   const master = context.createGain()
   master.gain.setValueAtTime(Math.min(1, Math.max(0, volume)), start)
   master.connect(context.destination)
+  if (tone === 'decision') {
+    strike(context, master, start, 783.99, 0.14)
+    strike(context, master, start + 0.18, 1046.5, 0.13)
+    strike(context, master, start + 0.36, 1318.51, 0.16)
+    return true
+  }
   const [first, second] = tone === 'done' ? [1318.51, 987.77] : [659.25, 493.88]
   strike(context, master, start, first, 0.16)
   strike(context, master, start + 0.19, second, 0.13)
