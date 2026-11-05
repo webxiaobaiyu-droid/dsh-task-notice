@@ -8,16 +8,6 @@
 
 ![完成卡片](docs/card.png)
 
-## 宣传视频
-
-75 秒、1080p 的介绍片，配音和剪辑脚本都在 [`video/`](video/) 里：
-
-- [视频 `video/out/dsh-task-notice-promo.mp4`](video/out/dsh-task-notice-promo.mp4)
-- [字幕 `video/out/dsh-task-notice-promo.srt`](video/out/dsh-task-notice-promo.srt)
-- [16:9 封面 `video/out/dsh-task-notice-cover-16x9.png`](video/out/dsh-task-notice-cover-16x9.png)
-- [4:3 封面 `video/out/dsh-task-notice-cover-4x3.png`](video/out/dsh-task-notice-cover-4x3.png)
-- [标题与简介 `video/out/publish-copy.md`](video/out/publish-copy.md)
-
 ## 能做什么
 
 - **每个会话都能听见，不只是眼前这个。** Host 半边订阅所有 Session 的 `session/event`，不依赖当前打开的会话，所以后台项目跑完了也会提醒。
