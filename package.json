@@ -1,6 +1,6 @@
 {
   "name": "dsh-task-notice",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Task completion notice for DeepSeek Harness: a global widget that tells you which project and session just finished, what was asked, and lets you jump straight back.",
   "keywords": [
     "deepseek-harness",

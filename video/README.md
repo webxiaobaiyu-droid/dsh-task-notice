@@ -34,7 +34,7 @@ Every scene is the same document:
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│ TASK NOTICE · 开场                    version   0.1.1     │  kicker left,
+│ TASK NOTICE · 开场                    version   0.2.0     │  kicker left,
 │                                       license   MIT       │  facts right
 │ 跑完了，别让答案等你                                        │  title
 │ dsh-task-notice · 每个会话的完成提醒                          │  qualifier
